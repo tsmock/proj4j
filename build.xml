@@ -27,13 +27,18 @@
 **
 **
 -->
-<project name="myPluginName" default="dist" basedir=".">
+<project name="proj4j" default="dist" basedir=".">
 
+    <!-- read build.properties for local settings -->
+    <property file="build.properties" />
+    <!-- enter the SVN command file name -->
+    <property name="svn" value="svn" />
     <!-- enter the SVN commit message -->
     <property name="commit.message" value="Commit message" />
     <!-- enter the *lowest* JOSM version this plugin is currently compatible with -->
-    <property name="plugin.main.version" value="" />
+    <property name="plugin.main.version" value="3872" />
 
+    <property name="libproj4j" value="lib/proj4j-0.1.0.jar"/>	
 
     <!--
       ************************************************
@@ -64,7 +69,11 @@
     -->
     <target name="compile" depends="init">
         <echo message="compiling sources for  ${plugin.jar} ... "/>
-        <javac srcdir="src" classpath="${josm}" debug="true" destdir="${plugin.build.dir}">
+        <javac srcdir="src" debug="true" destdir="${plugin.build.dir}">
+            <classpath>
+              <pathelement location="${josm}"/>
+              <pathelement location="${libproj4j}"/>				
+            </classpath>	
             <compilerarg value="-Xlint:deprecation"/>
             <compilerarg value="-Xlint:unchecked"/>
         </javac>
@@ -90,6 +99,8 @@
             </fileset>
         </copy>
         <jar destfile="${plugin.jar}" basedir="${plugin.build.dir}">
+            <!-- All jar files necessary to run plugin (no tests) -->
+            <zipfileset src="${libproj4j}"/>
             <!--
         ************************************************
         ** configure these properties. Most of them will be copied to the plugins
@@ -99,12 +110,11 @@
         ************************************************
     -->
             <manifest>
-                <attribute name="Author" value="..."/>
-                <attribute name="Plugin-Class" value="..."/>
+                <attribute name="Author" value="Josh Doe <josh@joshdoe.com>"/>
+                <attribute name="Plugin-Class" value="org.openstreetmap.josm.plugins.proj4j.Proj4J"/>
                 <attribute name="Plugin-Date" value="${version.entry.commit.date}"/>
-                <attribute name="Plugin-Description" value="..."/>
-                <attribute name="Plugin-Icon" value="..."/>
-                <attribute name="Plugin-Link" value="..."/>
+                <attribute name="Plugin-Description" value="adds projections from Proj4J"/>
+                <attribute name="Plugin-Link" value="http://wiki.openstreetmap.org/wiki/JOSM/Plugins/Proj4J"/>
                 <attribute name="Plugin-Mainversion" value="${plugin.main.version}"/>
                 <attribute name="Plugin-Version" value="${version.entry.commit.revision}"/>
             </manifest>
@@ -120,7 +130,7 @@
     -->
     <target name="revision">
 
-        <exec append="false" output="REVISION" executable="svn" failifexecutionfails="false">
+        <exec append="false" output="REVISION" executable="${svn}" failifexecutionfails="false">
             <env key="LANG" value="C"/>
             <arg value="info"/>
             <arg value="--xml"/>
@@ -165,7 +175,7 @@
         **
         -->
     <target name="core-info">
-        <exec append="false" output="core.info.xml" executable="svn" failifexecutionfails="false">
+        <exec append="false" output="core.info.xml" executable="${svn}" failifexecutionfails="false">
             <env key="LANG" value="C"/>
             <arg value="info"/>
             <arg value="--xml"/>
@@ -182,11 +192,15 @@
         -->
     <target name="commit-current">
         <echo>Commiting the plugin source with message '${commit.message}' ...</echo>
-        <exec append="true" output="svn.log" executable="svn" failifexecutionfails="false">
+        <exec append="true" output="svn.log" executable="${svn}" failifexecutionfails="false">
             <env key="LANG" value="C"/>
             <arg value="commit"/>
             <arg value="-m '${commit.message}'"/>
             <arg value="."/>
+        	<arg value="${svn.username_arg}"/>
+        	<arg value="${svn.username}"/>
+        	<arg value="${svn.password_arg}"/>
+        	<arg value="${svn.password}"/>
         </exec>
     </target>
 
@@ -195,13 +209,13 @@
         -->
     <target name="update-current">
         <echo>Updating plugin source ...</echo>
-        <exec append="true" output="svn.log" executable="svn" failifexecutionfails="false">
+        <exec append="true" output="svn.log" executable="${svn}" failifexecutionfails="false">
             <env key="LANG" value="C"/>
             <arg value="up"/>
             <arg value="."/>
         </exec>
         <echo>Updating ${plugin.jar} ...</echo>
-        <exec append="true" output="svn.log" executable="svn" failifexecutionfails="false">
+        <exec append="true" output="svn.log" executable="${svn}" failifexecutionfails="false">
             <env key="LANG" value="C"/>
             <arg value="up"/>
             <arg value="../dist/${plugin.jar}"/>
@@ -222,17 +236,21 @@
                         
     Now commiting ${plugin.jar} ...
     </echo>
-        <exec append="true" output="svn.log" executable="svn" failifexecutionfails="false">
+        <exec append="true" output="svn.log" executable="${svn}" failifexecutionfails="false">
             <env key="LANG" value="C"/>
             <arg value="-m '${commit.message}'"/>
             <arg value="commit"/>
             <arg value="${plugin.jar}"/>
+        	<arg value="${svn.username_arg}"/>
+        	<arg value="${svn.username}"/>
+        	<arg value="${svn.password_arg}"/>
+        	<arg value="${svn.password}"/>
         </exec>
     </target>
 
     <!-- ** make sure svn is present as a command line tool ** -->
     <target name="ensure-svn-present">
-        <exec append="true" output="svn.log" executable="svn" failifexecutionfails="false" failonerror="false" resultproperty="svn.exit.code">
+        <exec append="true" output="svn.log" executable="${svn}" failifexecutionfails="false" failonerror="false" resultproperty="svn.exit.code">
             <env key="LANG" value="C" />
             <arg value="--version" />
         </exec>
